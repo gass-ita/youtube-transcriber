@@ -4,30 +4,21 @@ import os
 import warnings
 from pydub import AudioSegment
 from tqdm import tqdm
-import torch
 import datetime
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-
-# Check if a GPU is available and set the device accordingly
-GPU = True  # Use GPU if available
-debug = True
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 
 # Disable warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers.pipelines.base")
 
-if not GPU:
-    device = -1
-    print("GPU disabled")
-else:
-    if torch.cuda.is_available():
-        device = 0  # Use GPU device 0
-        print("Using GPU for ASR.")
-    else:
-        device = -1  # Use CPU
-        print("GPU not available. Using CPU for ASR.")
+# Check the number of CPU cores available
+num_cores = multiprocessing.cpu_count()
+
+# Set this variable to True to enable debug mode
+debug = True
 
 # Initialize the ASR (Automatic Speech Recognition) pipeline with the Whisper model
-asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-large-v2", device=device)
+asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-large-v2", device=-1)
 
 # Create a yt_dlp instance
 ydl_opts = {
@@ -60,50 +51,40 @@ os.makedirs(audio_output_directory, exist_ok=True)
 audio = AudioSegment.from_wav(audio_file_path)
 num_segments = len(audio) // (segment_duration * 1000) + 1
 
-def process_segment(segment_number):
-    start_time = segment_number * segment_duration * 1000
-    end_time = min((segment_number + 1) * segment_duration * 1000, len(audio))
-    segment = audio[start_time:end_time]
-    segment.export(f'{audio_output_directory}/segment_{segment_number + 1}.wav', format="wav")
-    segment_path = f'{audio_output_directory}/segment_{segment_number + 1}.wav'
-    transcription = asr_pipeline(segment_path)
-    return transcription['text']
+def transcribe_segment(segment_path):
+    return asr_pipeline(segment_path)["text"]
 
 # Create a debug file for writing debug output
 if debug:
     debug_file = open(f"{audio_output_directory}/debug_data_{current_datetime}.txt", "w")
 
-# Initialize an empty string to store the final transcription
-final_transcription = ""
+# Initialize an empty list to store the future objects
+futures = []
 
 # Create a progress bar
 progress_bar = tqdm(total=num_segments, position=0, desc="Progress", unit="segment")
 
-# Use multithreading/multiprocessing only if CPU is used
-if device == -1:
-    with ThreadPoolExecutor(max_workers=4) as executor:  # Adjust the number of workers as needed
-        futures = [executor.submit(process_segment, i) for i in range(num_segments)]
-        for future in tqdm(futures, position=0, desc="Processing", unit="segment"):
-            transcription_text = future.result()
-            if debug:
-                debug_file.write(f"Transcription for segment {i + 1}: {transcription_text}\n")
-            progress_bar.update(1)
-            final_transcription += transcription_text + " "
-else:
-    # If GPU is used, process segments sequentially
+# Perform audio-to-text transcription for each segment in parallel
+with ProcessPoolExecutor(max_workers=num_cores) as executor:
     for i in range(num_segments):
-        transcription = asr_pipeline(f'{audio_output_directory}/segment_{i + 1}.wav')
-        if debug:
-            debug_file.write(f"Transcription for segment {i + 1}: {transcription['text']}\n")
-        progress_bar.update(1)
-        final_transcription += transcription["text"] + " "
+        start_time = i * segment_duration * 1000
+        end_time = min((i + 1) * segment_duration * 1000, len(audio))
+        segment = audio[start_time:end_time]
+        segment.export(f'{audio_output_directory}/segment_{i + 1}.wav', format="wav")
+
+        segment_path = f'{audio_output_directory}/segment_{i + 1}.wav'
+        future = executor.submit(transcribe_segment, segment_path)
+        futures.append(future)
+
+# Concatenate the transcription text from each segment
+final_transcription = " ".join(future.result() for future in futures)
 
 # Close the debug file
 if debug:
     debug_file.close()
 
 # Create the transcript file for the final transcription
-transcript_filename = f"{log_output_directory}/transcript_{video_title}_{current_datetime}.txt"
+transcript_filename = f"{audio_output_directory}/transcript_{video_title}_{current_datetime}.txt"
 with open(transcript_filename, "w") as transcript_file:
     transcript_file.write("Final Transcription:\n")
     transcript_file.write(final_transcription)
