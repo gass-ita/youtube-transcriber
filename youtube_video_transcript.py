@@ -74,6 +74,12 @@ os.makedirs(output_directory, exist_ok=True)
 audio = AudioSegment.from_wav(audio_file_path)
 num_segments = len(audio) // (segment_duration * 1000) + 1
 
+for i in range(num_segments):
+    start_time = i * segment_duration * 1000
+    end_time = min((i + 1) * segment_duration * 1000, len(audio))
+    segment = audio[start_time:end_time]
+    segment.export(f'{output_directory}/segment_{i + 1}.wav', format="wav")
+
 # Get the current date and time for the filenames
 current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
