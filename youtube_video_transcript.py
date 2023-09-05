@@ -102,7 +102,6 @@ progress_bar = tqdm(total=num_segments, position=0, desc="Progress", unit="segme
 
 
 def transcribe(i):
-    print(f"starting a transcribe: {i}")
     segment_path = f'{audio_output_directory}/segment_{i + 1}.wav'
     transcription = asr_pipeline(segment_path)
     if debug:
