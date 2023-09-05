@@ -99,11 +99,3 @@ with open(transcript_filename, "w") as transcript_file:
 # Print the final transcription if debug is False
 print("Final Transcription:")
 print(final_transcription)
-
-!pip install speechbrain
-!pip install transformers
-!pip install yt-dlp
-!pip install pydub
-!pip install webrtcvad
-!pip install soundfile
-!pip install tqdm
