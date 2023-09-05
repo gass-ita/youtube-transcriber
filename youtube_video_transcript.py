@@ -13,6 +13,12 @@ import threading
 GPU = True  # Use GPU if available
 debug = True
 multithread = True
+max_threads = 1
+
+# Get YouTube URL from user input
+url = input("Enter the YouTube video URL: ")
+
+
 
 # Disable warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers.pipelines.base")
@@ -29,11 +35,19 @@ else:
         device = -1  # Use CPU
         print("GPU not available. Using CPU for ASR.")
 
-# Initialize the ASR (Automatic Speech Recognition) pipeline with the Whisper model
-asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-medium", device=device)
+if multithread:
+    # Get the max number of threads 
+    max_threads = input("Enter the max number of threads to use: ")
+    try:
+        max_threads = int(max_threads)
+    except ValueError:
+        print("Invalid input. Using 1 thread.")
+        max_threads = 1
 
-# Get YouTube URL from user input
-url = input("Enter the YouTube video URL: ")
+# Initialize the ASR (Automatic Speech Recognition) pipeline with the Whisper model
+asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-large-v2", device=device)
+
+
 
 # Create a yt_dlp instance
 ydl_opts = {
@@ -100,17 +114,20 @@ def transcribe(i):
 if not multithread:
     for i in range(num_segments):
         r = transcribe(i)
-else:
-    threads = []
+else:   
     args = [i for i in range(num_segments)]
+    # Divide the args into chunks in base of the max number of threads
+    chunks = [args[i:i + max_threads] for i in range(0, len(args), max_threads)]
 
-    for arg in args:
-        t = threading.Thread(target=transcribe, args=(arg,))
-        threads.append(t)
-        t.start()
-    
-    for t in threads:
-        t.join()
+    for chunk in chunks:
+        threads = []
+        for arg in chunk:
+            t = threading.Thread(target=transcribe, args=(arg,))
+            threads.append(t)
+            t.start()
+        
+        for t in threads:
+            t.join()
 
 progress_bar.close()
 
