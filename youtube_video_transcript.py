@@ -6,10 +6,13 @@ from pydub import AudioSegment
 from tqdm import tqdm
 import torch
 import datetime
+import threading
+
 
 # Check if a GPU is available and set the device accordingly
 GPU = True  # Use GPU if available
 debug = True
+multithread = True
 
 # Disable warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers.pipelines.base")
@@ -21,6 +24,7 @@ else:
     if torch.cuda.is_available():
         device = 0  # Use GPU device 0
         print("Using GPU for ASR.")
+        multithread = False
     else:
         device = -1  # Use CPU
         print("GPU not available. Using CPU for ASR.")
@@ -77,19 +81,42 @@ if debug:
 
 # Initialize an empty string to store the final transcription
 final_transcription = ""
+final_transcription_obj = ["" for _ in range(num_segments)]
 
 # Create a progress bar
 progress_bar = tqdm(total=num_segments, position=0, desc="Progress", unit="segment")
 
-# Perform audio-to-text transcription for each segment
-for i in range(num_segments):
+
+def transcribe(i):
+    print(f"starting a transcribe: {i}")
     segment_path = f'{audio_output_directory}/segment_{i + 1}.wav'
     transcription = asr_pipeline(segment_path)
     if debug:
         debug_file.write(f"Transcription for segment {i + 1}: {transcription['text']}\n")
     progress_bar.update(1)
-    # Concatenate the transcription text from each segment
-    final_transcription += transcription["text"] + " "
+    final_transcription_obj[i] = transcription['text']
+
+# Perform audio-to-text transcription for each segment
+if not multithread:
+    for i in range(num_segments):
+        r = transcribe(i)
+else:
+    threads = []
+    args = [i for i in range(num_segments)]
+
+    for arg in args:
+        t = threading.Thread(target=transcribe, args=(arg,))
+        threads.append(t)
+        t.start()
+    
+    for t in threads:
+        t.join()
+
+progress_bar.close()
+
+# Build the final transcript
+for i in range(num_segments):
+    final_transcription += f"{final_transcription_obj[i]} "
 
 # Close the debug file
 if debug:
