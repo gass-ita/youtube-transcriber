@@ -16,6 +16,9 @@ parser.add_argument('-d', '--debug', help='Debug mode')
 parser.add_argument('-u', '--url', type=str, help='Input url of the youtube video')
 parser.add_argument('-m', '--multithread', help='Multithread mode')
 parser.add_argument('-t', '--max_threads', type=int, help='Max number of threads to use')
+parser.add_argument('-s', '--start_time', type=str, help='Start time of the video HH:MM:SS')
+parser.add_argument('-e', '--end_time', type=str, help='End time of the video HH:MM:SS')
+parser.add_argument('--segment_duration', type=int, help='Duration of each segment in seconds')
 
 
 args = parser.parse_args()
@@ -34,32 +37,43 @@ DEFAULT_DEBUG = False
 DEFAULT_MULTITHREAD = False
 DEFAULT_MAX_THREADS = 1
 DEFAULT_URL = ""
+DEFAULT_START_TIME = ""
+DEFAULT_END_TIME = ""
+DEFAULT_SEGMENT_DURATION = 10
+
+GPU = DEFAULT_GPU
+debug = DEFAULT_DEBUG
+multithread = DEFAULT_MULTITHREAD
+max_threads = DEFAULT_MAX_THREADS
+url = DEFAULT_URL
+start_time = DEFAULT_START_TIME
+end_time = DEFAULT_END_TIME
+segment_duration = DEFAULT_SEGMENT_DURATION
 
 
 if args.gpu:
     GPU = True
-else:
-    GPU = DEFAULT_GPU
 
 if args.debug:
     debug = True
-else:
-    debug = DEFAULT_DEBUG
 
 if args.multithread:
     multithread = True
-else:
-    multithread = DEFAULT_MULTITHREAD
 
 if args.max_threads:
     max_threads = args.max_threads
-else:
-    max_threads = DEFAULT_MAX_THREADS
 
 if args.url:
     url = args.url
-else:
-    url = DEFAULT_URL
+
+if args.start_time:
+    start_time = args.start_time
+
+if args.end_time:
+    end_time = args.end_time
+
+if args.segment_duration:
+    segment_duration = args.segment_duration
 
 
 
@@ -103,6 +117,8 @@ ydl_opts = {
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'wav',  # Use WAV as the preferred audio codec
+        'start_time': start_time,
+        'end_time': end_time,
     }],
     'outtmpl': 'output',  # Specify the output file name without extension
 }
@@ -116,7 +132,7 @@ with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 audio_file_path = 'output.wav'
 
 # Define the duration of each segment in seconds (you can adjust this)
-segment_duration = 10  # 5 minutes
+segment_duration = segment_duration  # 5 minutes
 
 # Create a directory to store the audio segments
 current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
