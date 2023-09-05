@@ -7,16 +7,64 @@ from tqdm import tqdm
 import torch
 import datetime
 import threading
+import argparse
+
+parser = argparse.ArgumentParser()
+# Add a command-line argument for the string
+parser.add_argument('-g', '--gpu', help='Use GPU if available')
+parser.add_argument('-d', '--debug', help='Debug mode')
+parser.add_argument('-u', '--url', type=str, help='Input url of the youtube video')
+parser.add_argument('-m', '--multithread', help='Multithread mode')
+parser.add_argument('-t', '--max_threads', type=int, help='Max number of threads to use')
 
 
-# Check if a GPU is available and set the device accordingly
-GPU = True  # Use GPU if available
-debug = True
-multithread = True
+args = parser.parse_args()
+
+
+""" # Check if a GPU is available and set the device accordingly
+GPU = False  # Use GPU if available
+debug = False
+multithread = False
 max_threads = 1
+url = "" """
 
-# Get YouTube URL from user input
-url = input("Enter the YouTube video URL: ")
+
+DEFAULT_GPU = False
+DEFAULT_DEBUG = False
+DEFAULT_MULTITHREAD = False
+DEFAULT_MAX_THREADS = 1
+DEFAULT_URL = ""
+
+
+if args.gpu:
+    GPU = True
+else:
+    GPU = DEFAULT_GPU
+
+if args.debug:
+    debug = True
+else:
+    debug = DEFAULT_DEBUG
+
+if args.multithread:
+    multithread = True
+else:
+    multithread = DEFAULT_MULTITHREAD
+
+if args.max_threads:
+    max_threads = args.max_threads
+else:
+    max_threads = DEFAULT_MAX_THREADS
+
+if args.url:
+    url = args.url
+else:
+    url = DEFAULT_URL
+
+
+
+if url == "":
+    url = input("Enter the YouTube video URL: ")
 
 
 
@@ -35,7 +83,7 @@ else:
         device = -1  # Use CPU
         print("GPU not available. Using CPU for ASR.")
 
-if multithread:
+if multithread and max_threads == DEFAULT_MAX_THREADS:
     # Get the max number of threads 
     max_threads = input("Enter the max number of threads to use: ")
     try:
