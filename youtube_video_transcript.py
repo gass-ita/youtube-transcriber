@@ -16,8 +16,8 @@ parser.add_argument('-d', '--debug', help='Debug mode')
 parser.add_argument('-u', '--url', type=str, help='Input url of the youtube video')
 parser.add_argument('-m', '--multithread', action='store_true', help='Multithread mode')
 parser.add_argument('-t', '--max_threads', type=int, help='Max number of threads to use')
-parser.add_argument('-s', '--start_time', type=str, help='Start time of the video HH:MM:SS')
-parser.add_argument('-e', '--end_time', type=str, help='End time of the video HH:MM:SS')
+parser.add_argument('-s', '--start_time', type=str, help='Start time of the video HH:MM:SS')    #TODO: to implent
+parser.add_argument('-e', '--end_time', type=str, help='End time of the video HH:MM:SS')        #TODO: to implent
 parser.add_argument('--segment_duration', type=int, help='Duration of each segment in seconds')
 
 
@@ -102,9 +102,24 @@ if multithread and max_threads == DEFAULT_MAX_THREADS:
     max_threads = input("Enter the max number of threads to use: ")
     try:
         max_threads = int(max_threads)
+        if max_threads < 1:
+            print("Invalid input. Using 1 thread.")
+            max_threads = 1
     except ValueError:
         print("Invalid input. Using 1 thread.")
         max_threads = 1
+    
+# Print all the settings
+print("--------------------")
+print(f"GPU: \t\t\t{GPU}")
+print(f"Debug: \t\t\t{debug}")
+print(f"Multithread: \t\t{multithread}")
+print(f"Max Threads: \t\t{max_threads}")
+print(f"URL: \t\t\t{url}")
+print(f"Start Time: \t\t{start_time}")
+print(f"End Time: \t\t{end_time}")
+print(f"Segment Duration: \t{segment_duration}")
+print("--------------------")
 
 # Initialize the ASR (Automatic Speech Recognition) pipeline with the Whisper model
 asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-large-v2", device=device)
@@ -117,8 +132,6 @@ ydl_opts = {
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'wav',  # Use WAV as the preferred audio codec
-        'start_time': start_time,
-        'end_time': end_time,
     }],
     'outtmpl': 'output',  # Specify the output file name without extension
 }
@@ -128,8 +141,25 @@ with yt_dlp.YoutubeDL(ydl_opts) as ydl:
     info = ydl.extract_info(url, download=True)
     video_title = info['title']
 
+
+
 # Replace 'your_audio_file.wav' with the path to your audio file
 audio_file_path = 'output.wav'
+
+# Cut the audio at the start and end times
+if start_time != DEFAULT_START_TIME:
+    audio = AudioSegment.from_wav(audio_file_path)
+    start_time = start_time.split(":")
+    start_time = int(start_time[0]) * 3600 + int(start_time[1]) * 60 + int(start_time[2])
+    audio = audio[start_time * 1000:]
+    audio.export(audio_file_path, format="wav")
+
+if end_time != DEFAULT_END_TIME:
+    audio = AudioSegment.from_wav(audio_file_path)
+    end_time = end_time.split(":")
+    end_time = int(end_time[0]) * 3600 + int(end_time[1]) * 60 + int(end_time[2])
+    audio = audio[:end_time * 1000]
+    audio.export(audio_file_path, format="wav")
 
 # Define the duration of each segment in seconds (you can adjust this)
 segment_duration = segment_duration  # 5 minutes
