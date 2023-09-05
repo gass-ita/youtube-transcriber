@@ -120,6 +120,9 @@ print(f"Start Time: \t\t{start_time}")
 print(f"End Time: \t\t{end_time}")
 print(f"Segment Duration: \t{segment_duration}")
 print("--------------------")
+cont = input("continue? (Y/n): ")
+if cont == "n":
+    exit()
 
 # Initialize the ASR (Automatic Speech Recognition) pipeline with the Whisper model
 asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-large-v2", device=device)
