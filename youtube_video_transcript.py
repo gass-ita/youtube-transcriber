@@ -17,18 +17,29 @@ import torch
 import datetime
 
 # Check if a GPU is available and set the device accordingly
-if torch.cuda.is_available():
-    device = 0  # Use GPU device 0
-    print("Using GPU for ASR.")
-else:
-    device = -1  # Use CPU
-    print("GPU not available. Using CPU for ASR.")
+
 
 # Set this variable to True to enable debug mode
+
+GPU = True # Use gpu if is avilable
 debug = True
 
 # Disable warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="transformers.pipelines.base")
+
+
+if not GPU:
+    device = -1
+    print("GPU disabled")
+else:
+    if torch.cuda.is_available():
+        device = 0  # Use GPU device 0
+        print("Using GPU for ASR.")
+    else:
+        device = -1  # Use CPU
+        print("GPU not available. Using CPU for ASR.")
+
+
 
 # Initialize the ASR (Automatic Speech Recognition) pipeline with the Whisper model
 asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-large-v2", device=device)
