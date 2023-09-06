@@ -9,37 +9,37 @@ import datetime
 import threading
 import argparse
 
+
+DEFAULT_GPU = True                  # set this to True if you want to use the GPU for ASR
+DEFAULT_DEBUG = False               # set this to True to enable debug mode
+DEFAULT_MULTITHREAD = False         # set this to True to enable multithread (CPU only)
+DEFAULT_MAX_THREADS = 1             # set this to fix a maximum number of multi process (smaller number -> less ram usage)
+DEFAULT_SEGMENT_DURATION = 10       # change the segmentation duration
+
+DEFAULT_URL = ""                    
+DEFAULT_START_TIME = ""
+DEFAULT_END_TIME = ""
+
+
+
+
+
+
 parser = argparse.ArgumentParser()
-# Add a command-line argument for the string
+Add a command-line argument for the string
 parser.add_argument('-g', '--gpu', help='Use GPU if available')
 parser.add_argument('-d', '--debug', help='Debug mode')
 parser.add_argument('-u', '--url', type=str, help='Input url of the youtube video')
 parser.add_argument('-m', '--multithread', action='store_true', help='Multithread mode')
 parser.add_argument('-t', '--max_threads', type=int, help='Max number of threads to use')
-parser.add_argument('-s', '--start_time', type=str, help='Start time of the video HH:MM:SS')    #TODO: to implent
-parser.add_argument('-e', '--end_time', type=str, help='End time of the video HH:MM:SS')        #TODO: to implent
+parser.add_argument('-s', '--start_time', type=str, help='Start time of the video HH:MM:SS')
+parser.add_argument('-e', '--end_time', type=str, help='End time of the video HH:MM:SS')
 parser.add_argument('--segment_duration', type=int, help='Duration of each segment in seconds')
 
 
 args = parser.parse_args()
 
 
-""" # Check if a GPU is available and set the device accordingly
-GPU = False  # Use GPU if available
-debug = False
-multithread = False
-max_threads = 1
-url = "" """
-
-
-DEFAULT_GPU = False
-DEFAULT_DEBUG = False
-DEFAULT_MULTITHREAD = False
-DEFAULT_MAX_THREADS = 1
-DEFAULT_URL = ""
-DEFAULT_START_TIME = ""
-DEFAULT_END_TIME = ""
-DEFAULT_SEGMENT_DURATION = 10
 
 GPU = DEFAULT_GPU
 debug = DEFAULT_DEBUG
@@ -49,6 +49,7 @@ url = DEFAULT_URL
 start_time = DEFAULT_START_TIME
 end_time = DEFAULT_END_TIME
 segment_duration = DEFAULT_SEGMENT_DURATION
+
 
 
 if args.gpu:
@@ -73,11 +74,12 @@ if args.end_time:
     end_time = args.end_time
 
 if args.segment_duration:
-    segment_duration = args.segment_duration
+    segment_duration = args.segment_duration 
 
 
 
-if url == "":
+
+if url == DEFAULT_URL:
     url = input("Enter the YouTube video URL: ")
 
 
@@ -165,7 +167,7 @@ if end_time != DEFAULT_END_TIME:
     audio.export(audio_file_path, format="wav")
 
 # Define the duration of each segment in seconds (you can adjust this)
-segment_duration = segment_duration  # 5 minutes
+segment_duration = segment_duration
 
 # Create a directory to store the audio segments
 current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
