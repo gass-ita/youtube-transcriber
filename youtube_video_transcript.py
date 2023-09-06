@@ -10,7 +10,7 @@ import threading
 import argparse
 
 
-DEFAULT_GPU = True                  # set this to True if you want to use the GPU for ASR
+DEFAULT_GPU = False                 # set this to True if you want to use the GPU for ASR
 DEFAULT_DEBUG = False               # set this to True to enable debug mode
 DEFAULT_MULTITHREAD = False         # set this to True to enable multithread (CPU only)
 DEFAULT_MAX_THREADS = 1             # set this to fix a maximum number of multi process (smaller number -> less ram usage)
@@ -27,7 +27,7 @@ DEFAULT_END_TIME = ""
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-g', '--gpu', action='store_true', help='Use GPU if available')
-parser.add_argument('-d', '--debug', help='Debug mode')
+parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
 parser.add_argument('-u', '--url', type=str, help='Input url of the youtube video')
 parser.add_argument('-m', '--multithread', action='store_true', help='Multithread mode')
 parser.add_argument('-t', '--max_threads', type=int, help='Max number of threads to use')
@@ -150,20 +150,24 @@ with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 # Replace 'your_audio_file.wav' with the path to your audio file
 audio_file_path = 'output.wav'
 
+
+
 # Cut the audio at the start and end times
-if start_time != DEFAULT_START_TIME:
+if start_time != DEFAULT_START_TIME or end_time != DEFAULT_END_TIME:
     audio = AudioSegment.from_wav(audio_file_path)
-    start_time = start_time.split(":")
-    start_time = int(start_time[0]) * 3600 + int(start_time[1]) * 60 + int(start_time[2])
-    audio = audio[start_time * 1000:]
+
+    if start_time != DEFAULT_START_TIME:
+        start_time = start_time.split(":")
+        start_time = int(start_time[0]) * 3600 + int(start_time[1]) * 60 + int(start_time[2])
+        audio = audio[start_time * 1000:]
+
+    if end_time != DEFAULT_END_TIME:
+        end_time = end_time.split(":")
+        end_time = int(end_time[0]) * 3600 + int(end_time[1]) * 60 + int(end_time[2])
+        audio = audio[:end_time * 1000]
+
     audio.export(audio_file_path, format="wav")
 
-if end_time != DEFAULT_END_TIME:
-    audio = AudioSegment.from_wav(audio_file_path)
-    end_time = end_time.split(":")
-    end_time = int(end_time[0]) * 3600 + int(end_time[1]) * 60 + int(end_time[2])
-    audio = audio[:end_time * 1000]
-    audio.export(audio_file_path, format="wav")
 
 # Define the duration of each segment in seconds (you can adjust this)
 segment_duration = segment_duration
@@ -177,8 +181,7 @@ os.makedirs(audio_output_directory, exist_ok=True)
 log_output_directory = f'{video_title}_{current_datetime}_logs'
 os.makedirs(log_output_directory, exist_ok=True)
 
-# Split the audio into segments
-audio = AudioSegment.from_wav(audio_file_path)
+# Split the audio into segments audio = AudioSegment.from_wav(audio_file_path)
 num_segments = len(audio) // (segment_duration * 1000) + 1
 
 for i in range(num_segments):
