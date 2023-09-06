@@ -11,12 +11,13 @@ Before using this script, make sure you have the following prerequisites install
 -   [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 -   [pydub](https://github.com/jiaaro/pydub)
 -   [tqdm](https://github.com/tqdm/tqdm)
+-   [torch](https://github.com/pytorch/pytorch)
 
 You can install the required Python packages using pip:
 
 Copy code
 
-`pip install transformers yt-dlp pydub tqdm argparse` 
+`pip install -r requirements.txt` 
 
 **Usage:**
 
