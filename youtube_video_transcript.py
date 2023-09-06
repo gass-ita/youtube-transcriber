@@ -26,7 +26,6 @@ DEFAULT_END_TIME = ""
 
 
 parser = argparse.ArgumentParser()
-Add a command-line argument for the string
 parser.add_argument('-g', '--gpu', action='store_true', help='Use GPU if available')
 parser.add_argument('-d', '--debug', help='Debug mode')
 parser.add_argument('-u', '--url', type=str, help='Input url of the youtube video')
