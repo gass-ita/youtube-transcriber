@@ -16,7 +16,7 @@ You can install the required Python packages using pip:
 
 Copy code
 
-`pip install transformers yt-dlp pydub tqdm` 
+`pip install transformers yt-dlp pydub tqdm argparse` 
 
 **Usage:**
 
